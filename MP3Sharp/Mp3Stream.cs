@@ -27,8 +27,8 @@ namespace MP3Sharp
     public class MP3Stream : Stream
     {
         // Used to interface with JavaZoom code.
-        private readonly Bitstream m_BitStream;
-        private readonly Decoder m_Decoder = new Decoder(Decoder.DefaultParams);
+        private Bitstream m_BitStream;
+        private Decoder m_Decoder = new Decoder(Decoder.DefaultParams);
         // local variables.
         private readonly Buffer16BitStereo m_Buffer;
         private readonly Stream m_SourceStream;
@@ -67,6 +67,8 @@ namespace MP3Sharp
         {
         }
 
+		PushbackStream pushback;
+
         /// <summary>
         ///     Creates a new stream instance using the provided stream as a source.
         ///     Will also read the first frame of the MP3 into the internal buffer.
@@ -77,7 +79,8 @@ namespace MP3Sharp
             IsEOF = false;
             FormatRep = SoundFormat.Pcm16BitStereo;
             m_SourceStream = sourceStream;
-            m_BitStream = new Bitstream(new PushbackStream(m_SourceStream, chunkSize));
+           	pushback = new PushbackStream(m_SourceStream, chunkSize);
+			m_BitStream = new Bitstream(pushback);
             m_Buffer = new Buffer16BitStereo();
             m_Decoder.OutputBuffer = m_Buffer;
             // read the first frame. This will fill the initial buffer with data, and get our frequency!
@@ -179,7 +182,19 @@ namespace MP3Sharp
         /// </summary>
         public override long Seek(long pos, SeekOrigin origin)
         {
-            return m_SourceStream.Seek(pos, origin);
+            //Hacky solution
+			if (pos != 0 || origin != SeekOrigin.Begin)
+				throw new NotImplementedException();
+			var val = m_SourceStream.Seek(pos, origin);
+			m_Decoder = new Decoder(Decoder.DefaultParams);
+			m_Buffer.ClearBuffer();
+			m_Decoder.OutputBuffer = m_Buffer;
+			pushback.Reset();
+			m_BitStream = new Bitstream(pushback); //TODO: complete hackery
+			IsEOF = false;
+			if (!ReadFrame()) // out of frames or end of stream?
+				IsEOF = true;
+			return val;
         }
 
         /// <summary>

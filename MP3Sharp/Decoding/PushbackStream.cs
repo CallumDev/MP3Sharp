@@ -41,6 +41,12 @@ namespace MP3Sharp.Decoding
             m_CircularByteBuffer = new CircularByteBuffer(m_BackBufferSize);
         }
 
+		public void Reset()
+		{
+			m_NumForwardBytesInBuffer = 0;
+			m_CircularByteBuffer.Reset();
+		}
+
         public int Read(sbyte[] toRead, int offset, int length)
         {
             // Read 
