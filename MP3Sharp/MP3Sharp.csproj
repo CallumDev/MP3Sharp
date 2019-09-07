@@ -36,6 +36,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Buffer16BitMono.cs" />
     <Compile Include="Decoding\DecoderErrors.cs" />
     <Compile Include="Decoding\Decoders\LayerIII\ChannelData.cs" />
     <Compile Include="Decoding\Decoders\LayerIII\GranuleInfo.cs" />
